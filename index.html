@@ -18,8 +18,16 @@
         <div id="app">
             <div id="main">
                 <div class="box-row" v-for="row in MAXHEIGHT">
-                    <a class="box" v-for="col in MAXWDITH" :class="[snackClass(row, col)]" :id="'snack' + '-' + row + '-' + col"></a>
+                    <a class="box" v-for="col in MAXWDITH" :class="[snackClass(row, col), snackAddClass(row, col)]" :id="'snack' + '-' + row + '-' + col"></a>
                 </div>
+                <!-- <div class="test">
+                    <div class="snack snack-top-left"></div>
+                    <div class="snack snack-top-right"></div>
+                    <div class="snack snack-bottom-left"></div>
+                    <div class="snack snack-bottom-right"></div>
+                    <div class="snack snack-row"></div>
+                    <div class="snack snack-col"></div>
+                </div> -->
             </div>
         </div>
     </body>
@@ -27,8 +35,8 @@
         const app = new Vue({
             el: '#app',
             data: {
-                MAXHEIGHT: 10,
-                MAXWDITH: 10,
+                MAXHEIGHT: 40,
+                MAXWDITH: 40,
                 snackPos: [],
                 head: [0, 0],
                 food: [0, 0],
@@ -52,7 +60,7 @@
                     self.auto()
                     self.eat()
                     self.isDie()
-                    self.updateStyle()
+                    // self.updateStyle()
                     self.win()
                 }, self.speed)
             },
@@ -63,11 +71,43 @@
                     if (this.isPos(row, col)) return 'snack'
                     return ''
                 },
+                snackAddClass(row, col) {
+                    const index = this.indexOfSnack(row, col)
+                    if (index >= 0) {
+                        const pos = this.snackPos
+                        if (index > 0 && index < this.snackPos.length - 1) {
+                            const last = pos[index - 1]
+                            const next = pos[index + 1]
+                            if (Math.abs(last[0] - row) == 1 && Math.abs(next[0] - row) == 1) return 'snack-col'
+                            else if ((last[0] - row == -1 && next[1] - col == -1) || (next[0] - row == -1 && last[1] - col == -1)) return 'snack-top-left'
+                            else if ((last[0] - row == -1 && next[1] - col == 1) || (next[0] - row == -1 && last[1] - col == 1)) return 'snack-top-right'
+                            else if ((last[0] - row == 1 && next[1] - col == -1) || (next[0] - row == 1 && last[1] - col == -1)) return 'snack-bottom-left'
+                            else if ((last[0] - row == 1 && next[1] - col == 1) || (next[0] - row == 1 && last[1] - col == 1)) return 'snack-bottom-right'
+                            else if (Math.abs(last[1] - col) == 1 && Math.abs(next[1] - col) == 1) return 'snack-row'
+                            else return ''
+                        } else if (index == 0) {
+                            const next = pos[index + 1]
+                            if (Math.abs(next[0] - row) == 1) return 'snack-col'
+                            else return 'snack-row'
+                        } else {
+                            const last = pos[index - 1]
+                            if (Math.abs(last[0] - row) == 1) return 'snack-col'
+                            else return 'snack-row'
+                        }
+                    }
+                    return ''
+                },
                 snackIsContains(row, col) {
                     for (let val of this.snackPos) {
                         if (val[0] == row && val[1] == col) return true
                     }
                     return false
+                },
+                indexOfSnack(row, col) {
+                    for (let i in this.snackPos) {
+                        if (this.snackPos[i][0] == row && this.snackPos[i][1] == col) return parseInt(i)
+                    }
+                    return -1
                 },
                 randomPos(rowMin = 1, rowMax = this.MAXHEIGHT + 1, colMin = 1, colMax = this.MAXWDITH + 1) {
                     let pos = [Math.floor((rowMax - rowMin) * Math.random()) + rowMin, Math.floor((colMax - colMin) * Math.random() + colMin)]
@@ -75,6 +115,9 @@
                         pos = [Math.floor((rowMax - rowMin) * Math.random()) + rowMin, Math.floor((colMax - colMin) * Math.random() + colMin)]
                     }
                     return pos
+                },
+                isHead(row, col) {
+                    return row == this.snackPos[0][0] && col == this.snackPos[0][1]
                 },
                 isPos(row, col) {
                     return this.snackIsContains(row, col) || ( row == this.food[0] && col == this.food[1])
@@ -136,7 +179,7 @@
                     return 'snack-' + row + '-' + col
                 },
                 win() {
-                    if (this.snackPos.length == this.MAXWDITH * this.MAXHEIGHT - 1) clearInterval(this.mainInterval)
+                    if (this.snackPos.length == this.MAXWDITH * this.MAXHEIGHT - 2) clearInterval(this.mainInterval)
                 }
             }
         })
@@ -166,6 +209,43 @@
             height: 4px;
             background-color: white;
             border: 1px solid black;
+            position: relative;
+        }
+        .snack::after, .snack::before {
+            content: '';
+            position: absolute; 
+        }
+        .snack-top-right::after, .snack-top-left::after, .snack-col::before {
+            top: -1px;
+            border-top: 1px solid white;
+            height: 0px;
+            width: 4px;
+        }
+        .snack-top-left::before, .snack-bottom-left::before, .snack-row::before {
+            left: -1px;
+            border-left: 1px solid white;
+            height: 4px;
+            width: 0px;
+        }
+        .snack-top-right::before, .snack-bottom-right::before, .snack-row::after {
+            right: -1px;
+            border-right: 1px solid white;
+            height: 4px;
+            width: 0px;
+        }
+        .snack-bottom-right::after, .snack-bottom-left::after, .snack-col::after {
+            bottom: -1px;
+            border-bottom: 1px solid white;
+            height: 0px;
+            width: 4px;
+        }
+        .test {
+            width: 100px;
+            height: 100px;
+            background-color: blue;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </html>
